@@ -23,6 +23,8 @@ export default async function handler(
     
     const prompt = fields.prompt?.[0];
     const file = files.file?.[0];
+    const threadId = fields.threadId?.[0];
+    const lastMessageId = fields.lastMessageId?.[0];
 
     if (!prompt) {
       return res.status(400).json({ message: 'Prompt is required' });
@@ -33,7 +35,12 @@ export default async function handler(
       fileContent = await fs.readFile(file.filepath);
     }
 
-    const result = await handlePrompt(prompt, fileContent);
+    // Crear el objeto threadState si se proporcionan los IDs
+    const threadState = threadId && lastMessageId 
+      ? { threadId, lastMessageId } 
+      : undefined;
+
+    const result = await handlePrompt(prompt, fileContent, threadState);
     res.status(200).json(result);
   } catch (error) {
     console.error('Error:', error);
