@@ -7,20 +7,30 @@ interface SearchResult {
 
 export function SearchInput() {
   const [prompt, setPrompt] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
+      const formData = new FormData();
+      formData.append('prompt', prompt);
+      if (file) {
+        formData.append('file', file);
+      }
+      
       const response = await fetch('/api/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
+        body: formData,
       });
       
       const data = await response.json();
@@ -35,11 +45,24 @@ export function SearchInput() {
   return (
     <div className="max-w-2xl mx-auto p-4">
       <form onSubmit={handleSearch} className="mb-4">
+        <div className="mb-4">
+          <input
+            type="file"
+            onChange={handleFileChange}
+            accept=".pdf"
+            className="w-full p-2 border rounded-lg mb-2"
+          />
+          {file && (
+            <p className="text-sm text-gray-600 mb-2">
+              Archivo seleccionado: {file.name}
+            </p>
+          )}
+        </div>
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ingresa tu pregunta..."
+          placeholder="Pregunta sobre el documento..."
           className="w-full p-2 border rounded-lg mb-2"
         />
         <button
@@ -47,7 +70,7 @@ export function SearchInput() {
           disabled={loading}
           className="w-full bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
         >
-          {loading ? 'Buscando...' : 'Buscar'}
+          {loading ? 'Analizando...' : 'Buscar'}
         </button>
       </form>
 
